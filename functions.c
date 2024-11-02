@@ -17,9 +17,11 @@ int readMatrixFromFile(int *n, const char *filename, double **matrix)
     char line[1000]; /* Buffer to read each line in the file */
     int row = 0, col = 0;
     *n = 0;
+    FILE *file;
+    char *token;
 
-    FILE *file = fopen(filename, "r"); /* Open file in read mode */
-    if (file == NULL)                  /* Check if file exists */
+    file = fopen(filename, "r"); /* Open file in read mode */
+    if (file == NULL)
     {
         printf("File does not exist\n");
         return 0; /* Return 0 if file doesn't exist */
@@ -28,7 +30,7 @@ int readMatrixFromFile(int *n, const char *filename, double **matrix)
     /* Read the file line by line */
     while (fgets(line, sizeof(line), file))
     {
-        char *token = strtok(line, "[], (){}"); /* Tokenize line to extract numbers */
+        token = strtok(line, "[], (){}"); /* Tokenize line to extract numbers */
         col = 0;
 
         /* Process each token in the line */
@@ -54,7 +56,7 @@ int readMatrixFromFile(int *n, const char *filename, double **matrix)
             /* Check if the number of columns match for each row */
             if (*n != col)
             {
-                printf("No. of columns don't match in the matrix\n");
+                printf("No. of columns don't match in the matrix within the file\n");
                 return 0;
             }
         }
@@ -85,20 +87,32 @@ int readMatrixFromFile(int *n, const char *filename, double **matrix)
 /* Function to read matrix from keyboard with individual prompts for each entry */
 int readMatrixFromKeyboard(int n, double **matrix)
 {
+    int i, j;
     printf("Enter the elements of the matrix row by row:\n");
-    for (int i = 0; i < n; i++)
+    for (i = 0; i < n; i++)
     {
-        for (int j = 0; j < n; j++)
+        for (j = 0; j < n; j++)
         {
             while (1) /* Loop until valid input is provided */
             {
                 printf("matrix[%d][%d]: ", i + 1, j + 1);
-                if (scanf("%lf", &matrix[i][j]) == 1)
+
+                if (scanf(" %lf", &matrix[i][j]) == 1)
                 {
+                    while (getchar() != '\n')
+                    {
+                        continue;
+                    }
                     break; /* Valid input received, exit loop */
                 }
                 else
                 {
+                    /*Clear the invalid input from the buffer- fflush can be used here*/
+                    while (getchar() != '\n')
+                    {
+                        continue;
+                    }
+
                     printf("Invalid input. Please enter a valid number.\n");
                 }
             }
@@ -119,21 +133,23 @@ int readMatrixFromKeyboard(int n, double **matrix)
  */
 void luDecomposition(int n, double **matrix, double **lower, double **upper)
 {
-    for (int i = 0; i < n; i++)
+    int i, j, k;
+
+    for (i = 0; i < n; i++)
     {
         /* Compute the elements of the upper triangular matrix (U) */
-        for (int k = i; k < n; k++)
+        for (k = i; k < n; k++)
         {
-            double sum = 0;
-            for (int j = 0; j < i; j++)
+            double sum = 0; /* Reset sum for each element of U */
+            for (j = 0; j < i; j++)
             {
-                sum += (lower[i][j] * upper[j][k]); /* Sum of L[i][j] * U[j][k] */
+                sum += (lower[i][j] * upper[j][k]);
             }
-            upper[i][k] = matrix[i][k] - sum; /* Calculate U[i][k] */
+            upper[i][k] = matrix[i][k] - sum;
         }
 
         /* Compute the elements of the lower triangular matrix (L) */
-        for (int k = i; k < n; k++)
+        for (k = i; k < n; k++)
         {
             if (i == k)
             {
@@ -141,12 +157,12 @@ void luDecomposition(int n, double **matrix, double **lower, double **upper)
             }
             else
             {
-                double sum = 0;
-                for (int j = 0; j < i; j++)
+                double sum = 0; /* Reset sum for each element of L */
+                for (j = 0; j < i; j++)
                 {
-                    sum += (lower[k][j] * upper[j][i]); /* Sum of L[k][j] * U[j][i] */
+                    sum += (lower[k][j] * upper[j][i]);
                 }
-                lower[k][i] = (matrix[k][i] - sum) / upper[i][i]; /* Calculate L[k][i] */
+                lower[k][i] = (matrix[k][i] - sum) / upper[i][i];
             }
         }
     }
@@ -163,38 +179,60 @@ void luDecomposition(int n, double **matrix, double **lower, double **upper)
  */
 
 /* Modified solveLinearSystem function with error handling */
+
 int solveLinearSystem(int n, double **lower, double **upper, double *b, double *x)
 {
-    double *y = (double *)malloc(n * sizeof(double)); /* Temporary vector for Ly = b */
+    double *y;
+    int i, j;
+    /* Input validation */
+    if (n <= 0 || lower == NULL || upper == NULL || b == NULL || x == NULL)
+    {
+        printf("Invalid input parameters.\n");
+        return 0;
+    }
+
+    /* Allocate memory for temporary vector y */
+    y = (double *)malloc(n * sizeof(double));
     if (y == NULL)
     {
         printf("Memory allocation failed for vector y.\n");
         return 0;
     }
+
     /* Forward substitution for Ly = b */
-    for (int i = 0; i < n; i++)
+    for (i = 0; i < n; i++)
     {
+        if (lower[i][i] == 0)
+        {
+            printf("Error: Zero diagonal element in lower triangular matrix at row %d.\n", i);
+            free(y);
+            return 0;
+        }
+
         y[i] = b[i];
-        for (int j = 0; j < i; j++)
+        for (j = 0; j < i; j++)
         {
             y[i] -= lower[i][j] * y[j];
         }
+        y[i] /= lower[i][i]; /* Division by the diagonal element */
     }
 
     /* Backward substitution for Ux = y */
-    for (int i = n - 1; i >= 0; i--)
+    for (i = n - 1; i >= 0; i--)
     {
-        if (upper[i][i] == 0) /* Check for zero diagonal element */
+        if (upper[i][i] == 0)
         {
-            printf("Error: Division by zero detected in upper triangular matrix.\n");
+            printf("Error: Zero diagonal element in upper triangular matrix at row %d.\n", i);
             free(y);
+            return 0;
         }
+
         x[i] = y[i];
-        for (int j = i + 1; j < n; j++)
+        for (j = i + 1; j < n; j++)
         {
             x[i] -= upper[i][j] * x[j];
         }
-        x[i] /= upper[i][i];
+        x[i] /= upper[i][i]; /* Division by the diagonal element */
     }
 
     free(y);
@@ -209,8 +247,14 @@ int solveLinearSystem(int n, double **lower, double **upper, double *b, double *
   Returns:
     The determinant of the matrix
  */
+
 double calculateDeterminant(int n, double **matrix)
 {
+    double det = 0.0, minorDet;
+    int i, j, col;
+    double **subMatrix;
+    int subCol;
+
     /* Base case for a 1x1 matrix */
     if (n == 1)
     {
@@ -220,44 +264,43 @@ double calculateDeterminant(int n, double **matrix)
     /* Base case for a 2x2 matrix */
     if (n == 2)
     {
-        return matrix[0][0] * matrix[1][1] - matrix[0][1] * matrix[1][0];
+        return (matrix[0][0] * matrix[1][1]) - (matrix[0][1] * matrix[1][0]);
     }
 
-    double det = 0.0;
-
     /* Allocate memory for subMatrix of size (n-1) x (n-1) */
-    double **subMatrix = (double **)malloc((n - 1) * sizeof(double *));
-    for (int i = 0; i < n - 1; i++)
+    subMatrix = (double **)malloc((n - 1) * sizeof(double *));
+    for (i = 0; i < n - 1; i++)
     {
         subMatrix[i] = (double *)malloc((n - 1) * sizeof(double));
     }
 
     /* Recursive case: cofactor expansion along the first row */
-    for (int col = 0; col < n; col++)
+    for (col = 0; col < n; col++)
     {
         /* Form the submatrix by excluding the current row and column */
-        for (int i = 1; i < n; i++) /* Start from row 1 to exclude the first row */
-        {
-            int subCol = 0;
-            for (int j = 0; j < n; j++)
+        for (i = 1; i < n; i++)
+        { /* Start from row 1 to exclude the first row */
+            subCol = 0;
+            for (j = 0; j < n; j++)
             {
-                if (j == col) /* Skip the current column */
+                if (j == col)
+                { /* Skip the current column */
                     continue;
-
+                }
                 subMatrix[i - 1][subCol] = matrix[i][j]; /* Copy element into submatrix */
                 subCol++;
             }
         }
 
-        /* Recursive calculation for the minor determinant */
-        double minorDet = calculateDeterminant(n - 1, subMatrix);
+        /* Recursive step for the minor determinant */
+        minorDet = calculateDeterminant(n - 1, subMatrix);
 
         /* Calculate cofactor and add to determinant */
         det += (col % 2 == 0 ? 1 : -1) * matrix[0][col] * minorDet;
     }
 
     /* Free allocated memory for subMatrix */
-    for (int i = 0; i < n - 1; i++)
+    for (i = 0; i < n - 1; i++)
     {
         free(subMatrix[i]);
     }
@@ -277,7 +320,8 @@ double calculateDeterminant(int n, double **matrix)
 double luDeterminant(int n, double **upper)
 {
     double det = 1.0;
-    for (int i = 0; i < n; i++)
+    int i;
+    for (i = 0; i < n; i++)
     {
         det *= upper[i][i]; /* Product of the diagonal elements of U */
     }
@@ -292,9 +336,10 @@ double luDeterminant(int n, double **upper)
  */
 void printMatrix(int n, double **matrix)
 {
-    for (int i = 0; i < n; i++)
+    int i, j;
+    for (i = 0; i < n; i++)
     {
-        for (int j = 0; j < n; j++)
+        for (j = 0; j < n; j++)
         {
             printf("%.4f\t", matrix[i][j]); /* Print each element with 4 decimal places */
         }
