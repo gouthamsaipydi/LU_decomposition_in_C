@@ -8,15 +8,25 @@ int main()
     /*Initializing the loop dummies*/
     int i;
 
+    printf("Namaste User\n");
+    printf("-------------------------------------------------------\n");
     /* Loop until a valid matrix size is entered */
     while (1)
     {
-        printf("Namaste User\n");
-        printf("-------------------------------------------------------\n");
+
         printf("Enter the number of rows/columns (for a square matrix): ");
-        if (scanf("%d", &n) == 1 && n > 1)
+        if (scanf(" %d", &n) == 1 && n > 1)
+        {
             break;
-        printf("Error: Invalid matrix size. Please enter a positive integer.\n");
+        }
+        else
+        {
+            printf("Error: Invalid matrix size. Please enter a positive integer.\n");
+            while (getchar() != '\n')
+            {
+                continue;
+            }
+        }
     }
 
     /* Allocate memory for the matrices and check for allocation success */
@@ -48,8 +58,17 @@ int main()
         printf("1) From file\n");
         printf("2) From keyboard\n");
         if (scanf(" %d", &user_choice) == 1 && (user_choice == 1 || user_choice == 2))
+        {
             break;
-        printf("Error: Invalid choice. Please enter 1 or 2.\n");
+        }
+        else
+        {
+            printf("Error: Invalid user choice. Please enter 1 or 2 \n");
+            while (getchar() != '\n')
+            {
+                continue;
+            }
+        }
     }
 
     /* Matrix input based on user choice with error-checking */
@@ -105,7 +124,7 @@ int main()
     {
         luDecomposition(n, matrix, lower, upper);
         double det = luDeterminant(n, upper);
-        printf("Determinant: %f\n", det);
+        printf("Determinant: %.4lf\n", det);
     }
     else if (user_choice == 3)
     {
@@ -124,7 +143,7 @@ int main()
             while (1)
             {
                 printf("b[%d]: ", i);
-                if (scanf("%lf", &b[i]) == 1)
+                if (scanf(" %lf", &b[i]) == 1)
                     break;
                 printf("Error: Invalid entry. Please enter a number.\n");
             }
@@ -135,7 +154,7 @@ int main()
         printf("Solution vector x:\n");
         for (i = 0; i < n; i++)
         {
-            printf("%lf\n", x[i]);
+            printf("%.4lf\n", x[i]);
         }
         free(b);
         free(x);
