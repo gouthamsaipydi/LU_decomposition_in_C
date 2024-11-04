@@ -24,7 +24,7 @@ This project is ideal for anyone needing a reliable tool for matrix manipulation
 
 ## Acknowledgments
 
-I would like to express my gratitude to **Prof. Pinak Pani Pal** at ISI Kolkata for their valuable guidance and support.
+I would like to express my gratitude to **Prof. Pinakpani Pal** at ISI Kolkata for their valuable guidance and support.
 
 ## References
 
