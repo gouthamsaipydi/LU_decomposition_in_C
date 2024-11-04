@@ -29,4 +29,4 @@ I would like to express my gratitude to **Prof. Pinak Pani Pal** at ISI Kolkata 
 ## References
 
 - [The C Programming Language by Brian W. Kernighan, Dennis M. Ritchie](https://books.google.co.in/books/about/The_C_Programming_Language.html?id=FGkPBQAAQBAJ&redir_esc=y)
-- [Numerical Recipes in C - The Art of Scientific Computing](https://www.nr.com/)
+- [Numerical Recipes in C - The Art of Scientific Computing](https://www.grad.hr/nastava/gs/prg/NumericalRecipesinC.pdf)
